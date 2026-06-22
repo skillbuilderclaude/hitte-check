@@ -1,0 +1,804 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#16181d">
+<title>Hitte-check · Hanab</title>
+<style>
+  :root{
+    --bg:#16181d; --surface:#20242b; --surface-2:#2a2f38; --line:#363c46;
+    --text:#f3f5f7; --dim:#a7afba;
+    --ok:#5b6776; --green:#2f9e44; --yellow:#f0c000; --orange:#ef7d1a; --red:#e23b32;
+    --hivis:#f5e000;
+    --radius:16px; --tap:60px;
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text)}
+  body{min-height:100dvh;display:flex;justify-content:center}
+  .app{width:100%;max-width:480px;background:var(--bg);min-height:100dvh;display:flex;flex-direction:column;position:relative;overflow:hidden}
+
+  header{padding:14px 18px 0;flex:0 0 auto}
+  .brandrow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .brand{display:flex;flex-direction:column;line-height:1.05}
+  .brand b{font-size:1.18rem;font-weight:800;letter-spacing:.01em}
+  .brand span{font-size:.72rem;color:var(--dim);text-transform:uppercase;letter-spacing:.12em;margin-top:3px}
+  .infobtn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--text);font-weight:800;font-size:1rem;cursor:pointer}
+  .hazard{height:8px;margin:12px 0 0;border-radius:4px;background:repeating-linear-gradient(135deg,var(--hivis) 0 14px,#15171c 14px 28px)}
+
+  main{flex:1 1 auto;overflow-y:auto;padding:16px 16px 96px;-webkit-overflow-scrolling:touch}
+  .view{display:none;animation:fade .25s ease}
+  .view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .label{font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--dim);font-weight:700}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+
+  .wx-status{font-size:.95rem;color:var(--dim);font-weight:600;display:flex;align-items:center;gap:8px}
+  .wx-status .pulse{width:9px;height:9px;border-radius:50%;background:var(--hivis);animation:pulse 1.1s ease infinite;flex:0 0 auto}
+  @keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+  .wx-main{margin-top:8px;display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+  .wx-temp{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:3rem;font-weight:700;line-height:.95}
+  .wx-temp small{font-size:1.2rem;color:var(--dim);font-weight:600}
+  .wx-feel{font-size:1.05rem;color:var(--text);padding-bottom:6px}
+  .wx-feel b{font-size:1.5rem;font-weight:800}
+  .wx-meta{font-size:.78rem;color:var(--dim);margin-top:8px;width:100%}
+  .wx-search{display:flex;gap:8px;margin-top:14px}
+  .wx-search input{flex:1;min-width:0;min-height:46px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);padding:0 12px;font-size:1rem}
+  .wx-search input::placeholder{color:#7c8794}
+  .wx-sug{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .sug{border:1px solid var(--line);background:var(--surface-2);color:var(--text);border-radius:999px;padding:8px 12px;font-size:.86rem;font-weight:600;cursor:pointer}
+  .sug:active{filter:brightness(.94)}
+  .wx-actions{display:flex;gap:8px;margin-top:10px}
+  .btn-mini{flex:1;min-height:46px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-weight:700;font-size:.92rem;cursor:pointer}
+  .btn-mini.ghost{background:transparent}
+  .btn-mini:active{filter:brightness(.94)}
+
+  .stepper{display:flex;align-items:center;justify-content:space-between;margin-top:12px;gap:12px}
+  .step{width:var(--tap);height:var(--tap);border-radius:14px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:2rem;font-weight:700;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center}
+  .step:active{background:#333a45}
+  .readout{flex:1 1 auto;text-align:center;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:2.6rem;font-weight:700;letter-spacing:-.02em}
+  .readout small{font-size:1.1rem;color:var(--dim);font-weight:600}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;margin-top:6px;gap:10px}
+  .switch{position:relative;width:52px;height:30px;flex:0 0 auto}
+  .switch input{opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+  .slider{position:absolute;inset:0;background:#3a414c;border-radius:30px;transition:.2s;pointer-events:none}
+  .slider::before{content:"";position:absolute;width:24px;height:24px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+  .switch input:checked + .slider{background:var(--green)}
+  .switch input:checked + .slider::before{transform:translateX(22px)}
+
+  .phase{border-radius:var(--radius);padding:22px 18px;margin-bottom:14px;color:#fff}
+  .phase.dark{color:#16181d}
+  .phase .ptag{font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;opacity:.85;font-weight:700}
+  .phase .pname{font-size:clamp(2rem,9vw,2.7rem);font-weight:900;letter-spacing:-.01em;margin:2px 0 6px;line-height:1}
+  .phase .pmsg{font-size:1.05rem;font-weight:600;line-height:1.35}
+  .phase .pmeta{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+  .pchip{background:rgba(0,0,0,.18);border-radius:10px;padding:8px 11px;font-size:.85rem;font-weight:600}
+  .phase.dark .pchip{background:rgba(0,0,0,.10)}
+  .src{font-size:.78rem;color:var(--dim);margin:-4px 2px 14px}
+
+  ul.measures{list-style:none;margin:6px 0 0;padding:0}
+  ul.measures li{position:relative;padding:8px 0 8px 26px;border-top:1px solid var(--line);font-size:.96rem;line-height:1.4}
+  ul.measures li:first-child{border-top:none}
+  ul.measures li::before{content:"";position:absolute;left:4px;top:15px;width:9px;height:9px;border-radius:2px;background:var(--accent,#5b6776)}
+
+  /* forecast strip */
+  .fc-sum{font-size:.92rem;color:var(--text);line-height:1.4;margin:8px 0 6px}
+  .fc-strip{display:flex;gap:6px;overflow-x:auto;padding:6px 2px 2px;-webkit-overflow-scrolling:touch}
+  .fc-col{flex:0 0 auto;width:40px;display:flex;flex-direction:column;align-items:center;gap:5px}
+  .fc-col.now .fc-hr{color:var(--hivis)}
+  .fc-temp{font-size:.78rem;font-weight:700;color:var(--text)}
+  .fc-barwrap{height:104px;display:flex;align-items:flex-end}
+  .fc-bar{width:24px;border-radius:6px 6px 3px 3px;min-height:12px}
+  .fc-hr{font-size:.74rem;color:var(--dim);font-weight:600}
+  .fc-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+  .fc-legend span{display:flex;align-items:center;gap:5px;font-size:.74rem;color:var(--dim)}
+  .fc-legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:var(--tap);border-radius:14px;border:none;font-size:1rem;font-weight:800;cursor:pointer;margin-top:10px;padding:0 14px}
+  .btn-primary{background:var(--hivis);color:#16181d}
+  .btn-ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--line)}
+  .btn:active{filter:brightness(.94)}
+
+  .seg{display:flex;gap:8px;margin-top:12px}
+  .seg button{flex:1;min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--dim);font-weight:700;cursor:pointer}
+  .seg button.on{background:var(--text);color:#16181d;border-color:var(--text)}
+  .wbgt-out{margin-top:14px;border-radius:12px;padding:14px;font-weight:700;text-align:center}
+
+  .timer-wrap{text-align:center}
+  .timer-state{font-size:.8rem;letter-spacing:.18em;text-transform:uppercase;font-weight:800;color:var(--dim)}
+  .timer-big{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:clamp(4rem,26vw,6.5rem);font-weight:700;line-height:1;letter-spacing:-.03em;margin:4px 0 2px}
+  .ring{border-radius:24px;padding:26px 18px;margin:6px 0 14px;border:1px solid var(--line);background:var(--surface);transition:background .3s}
+  .ring.work{background:#1c2a20;border-color:#2f5a37}
+  .ring.rest{background:#2e2410;border-color:#7a5f15}
+  .ring.flash{animation:flash .6s ease}
+  @keyframes flash{0%,100%{filter:none}30%{filter:brightness(1.8)}}
+  .presets{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:4px}
+  .preset{min-height:52px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-weight:700;cursor:pointer;font-size:.92rem}
+  .preset.on{outline:2px solid var(--hivis);outline-offset:-2px}
+  .timer-controls{display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-top:12px}
+  .counter{font-size:.9rem;color:var(--dim);margin-top:12px;text-align:center}
+  .counter b{color:var(--text)}
+
+  .sos{display:flex;align-items:center;justify-content:center;gap:10px;background:var(--red);color:#fff;min-height:66px;border-radius:14px;font-size:1.4rem;font-weight:900;text-decoration:none;letter-spacing:.02em;margin-bottom:6px}
+  .sos:active{filter:brightness(.92)}
+  .sosnote{font-size:.84rem;color:var(--dim);margin:0 0 14px;text-align:center}
+  .aid{border-radius:14px;border:1px solid var(--line);background:var(--surface);margin-bottom:12px;overflow:hidden}
+  .aid .top{padding:12px 14px;font-weight:800;color:#16181d}
+  .aid .body{padding:12px 14px}
+  .aid .body .h{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);font-weight:700;margin-bottom:3px}
+  .aid .body p{margin:0 0 10px;line-height:1.4;font-size:.96rem}
+  .aid .body p:last-child{margin-bottom:0}
+
+  .urine{border-radius:14px;overflow:hidden;border:1px solid var(--line);margin-top:8px}
+  .urow{display:flex;align-items:stretch}
+  .uswatch{width:60px;flex:0 0 auto}
+  .utext{padding:11px 13px;font-size:.92rem;line-height:1.35;display:flex;align-items:center;background:var(--surface)}
+  .urow + .urow .utext{border-top:1px solid var(--line)}
+  p.lead{font-size:1rem;line-height:1.5;color:var(--text);margin:0 0 12px}
+  .muted{color:var(--dim);font-size:.86rem;line-height:1.45}
+
+  nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;pointer-events:none}
+  .tabbar{width:100%;max-width:480px;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(20,22,27,.94);backdrop-filter:blur(10px);border-top:1px solid var(--line);pointer-events:auto;padding-bottom:env(safe-area-inset-bottom)}
+  .tab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 2px 12px;background:none;border:none;color:var(--dim);cursor:pointer;font-size:.66rem;font-weight:700;letter-spacing:.01em}
+  .tab svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .tab.on{color:var(--text)}
+  .tab.on svg{stroke:var(--hivis)}
+
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center;z-index:50}
+  .modal.open{display:flex}
+  .sheet{width:100%;max-width:480px;background:var(--surface);border-radius:20px 20px 0 0;border:1px solid var(--line);max-height:86dvh;overflow-y:auto;padding:18px 18px calc(24px + env(safe-area-inset-bottom))}
+  .sheet h2{margin:2px 0 10px;font-size:1.2rem}
+  .sheet h3{margin:16px 0 6px;font-size:.95rem}
+  .sheet p{margin:0 0 10px;line-height:1.5;font-size:.92rem;color:var(--text)}
+  .sheet .close{position:sticky;top:0;float:right;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:1.1rem;font-weight:800;cursor:pointer}
+  .legend{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:.9rem}
+  .dot{width:14px;height:14px;border-radius:4px;flex:0 0 auto}
+
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+  :focus-visible{outline:3px solid var(--hivis);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brandrow">
+      <div class="brand"><b>Hitte-check</b><span>Hanab Pipelines &amp; Utilities</span></div>
+      <button class="infobtn" id="infoBtn" aria-label="Uitleg en disclaimer">i</button>
+    </div>
+    <div class="hazard" aria-hidden="true"></div>
+  </header>
+
+  <main>
+    <!-- STATUS -->
+    <section class="view active" id="view-status">
+      <div class="card" id="heavyCard">
+        <div class="toggle-row">
+          <div><div class="label">Zwaar werk</div><div class="muted" style="margin-top:2px">putten, sleuven, sjouwen, hete leidingen, zware PBM</div></div>
+          <label class="switch"><input type="checkbox" id="wbgtSwitch"><span class="slider"></span></label>
+        </div>
+        <div class="muted" id="heavyHint" style="margin-top:8px">Staat uit. Zet aan bij zwaar werk: de fasen tellen dan zwaarder en slaan eerder om naar geel, oranje en rood — hier én bij Vooruit. Vuistregel ISO 7243 / SZW; exacte WBGT-meting zie §8.3 van het beleid.</div>
+      </div>
+
+      <div class="card" id="wxCard">
+        <div class="wx-status" id="wxStatus"><span class="pulse"></span>Weer laden…</div>
+        <div class="wx-main" id="wxMain" style="display:none">
+          <div class="wx-temp"><span id="wxTemp">–</span><small>°C</small></div>
+          <div class="wx-feel">voelt als <b id="wxFeel">–</b>°C</div>
+          <div class="wx-meta" id="wxMeta"></div>
+        </div>
+        <div class="wx-search">
+          <input id="placeInput" type="text" inputmode="text" autocomplete="off" placeholder="Plaats, bv. Papendrecht">
+          <button class="btn-mini" id="placeGo" style="flex:0 0 auto;padding:0 16px">Zoek</button>
+        </div>
+        <div class="wx-sug" id="placeSug" style="display:none"></div>
+        <div class="wx-actions">
+          <button class="btn-mini" id="useGeoBtn">Mijn locatie</button>
+          <button class="btn-mini ghost" id="toManual">Handmatig</button>
+        </div>
+      </div>
+
+      <div class="card" id="manualCard" style="display:none">
+        <div class="label">Temperatuur in de schaduw</div>
+        <div class="stepper">
+          <button class="step" id="tMinus" aria-label="Lager">–</button>
+          <div class="readout"><span id="tVal">30</span><small>°C</small></div>
+          <button class="step" id="tPlus" aria-label="Hoger">+</button>
+        </div>
+        <div class="toggle-row" style="margin-top:16px">
+          <div class="label">KNMI-hittekracht meenemen</div>
+          <label class="switch"><input type="checkbox" id="hkToggle"><span class="slider"></span></label>
+        </div>
+        <div class="stepper" id="hkStepper" style="opacity:.4;pointer-events:none">
+          <button class="step" id="hMinus" aria-label="Lager">–</button>
+          <div class="readout"><span id="hVal">7</span><small>/ 10</small></div>
+          <button class="step" id="hPlus" aria-label="Hoger">+</button>
+        </div>
+      </div>
+
+      <div class="phase" id="phaseBanner">
+        <div class="ptag" id="pTag">Status</div>
+        <div class="pname" id="pName">—</div>
+        <div class="pmsg" id="pMsg">—</div>
+        <div class="pmeta">
+          <span class="pchip" id="pWork">—</span>
+          <span class="pchip" id="pDrink">—</span>
+        </div>
+      </div>
+      <div class="src" id="pSrc"></div>
+
+      <div class="card">
+        <div class="label">Wat te doen</div>
+        <ul class="measures" id="measures"></ul>
+      </div>
+
+      <button class="btn btn-primary" id="startTimerBtn">Werk-rust timer starten</button>
+    </section>
+
+    <!-- VOORUIT -->
+    <section class="view" id="view-vooruit">
+      <div class="card">
+        <div class="label">Rest van vandaag</div>
+        <div class="fc-sum" id="todaySum">Verloop laden…</div>
+        <div class="fc-strip" id="todayStrip"></div>
+        <div class="fc-legend">
+          <span><i style="background:var(--green)"></i>Groen</span>
+          <span><i style="background:var(--yellow)"></i>Geel</span>
+          <span><i style="background:var(--orange)"></i>Oranje</span>
+          <span><i style="background:var(--red)"></i>Rood</span>
+        </div>
+      </div>
+
+      <div class="label" style="margin:4px 2px 8px">Vooruitblik morgen</div>
+      <div class="phase" id="tmrBanner" style="margin-bottom:12px">
+        <div class="ptag" id="tmrTag">Morgen</div>
+        <div class="pname" id="tmrName">—</div>
+        <div class="pmsg" id="tmrMsg">—</div>
+        <div class="pmeta">
+          <span class="pchip" id="tmrMax">—</span>
+          <span class="pchip" id="tmrMin">—</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="label">Uurverloop morgen</div>
+        <div class="fc-strip" id="tmrStrip" style="margin-top:8px"></div>
+      </div>
+      <div class="muted" style="margin:-2px 2px 0">Verwachting (kan nog wijzigen). De uitvoerder bepaalt elke ochtend de fase per locatie.</div>
+
+      <div class="muted" style="margin:12px 2px 0">Staat het verloop hier op zwaar werk? Dat schakel je in of uit met <b>Zwaar werk</b> bovenaan het Status-scherm.</div>
+    </section>
+
+    <!-- TIMER -->
+    <section class="view" id="view-timer">
+      <div class="timer-wrap">
+        <div class="ring" id="timerRing">
+          <div class="timer-state" id="timerState">Klaar</div>
+          <div class="timer-big" id="timerBig">45:00</div>
+          <div class="muted" id="timerSub">Werkblok</div>
+        </div>
+        <div class="label" style="text-align:left">Ritme kiezen</div>
+        <div class="presets" id="presets"></div>
+        <div class="timer-controls">
+          <button class="btn btn-primary" id="startBtn" style="margin-top:0">Start</button>
+          <button class="btn btn-ghost" id="resetBtn" style="margin-top:0">Reset</button>
+        </div>
+        <div class="counter">Pauzes deze sessie: <b id="roundCount">0</b> · drink elke pauze water</div>
+      </div>
+    </section>
+
+    <!-- EHBO -->
+    <section class="view" id="view-ehbo">
+      <a class="sos" href="tel:112">⚠ Bel 112</a>
+      <p class="sosnote">Geef meteen het adres of de locatie van de werkplek door.</p>
+      <div class="aid">
+        <div class="top" style="background:var(--yellow)">Hittekramp / oedeem</div>
+        <div class="body">
+          <div class="h">Signalen</div><p>Spierkrampen, opgezette handen of voeten, veel zweten.</p>
+          <div class="h">Doen</div><p>Rust in de schaduw, water met iets zout drinken, licht rekken. Houdt het aan? Naar de bedrijfsarts of huisarts.</p>
+        </div>
+      </div>
+      <div class="aid">
+        <div class="top" style="background:var(--orange)">Hitte-uitputting</div>
+        <div class="body">
+          <div class="h">Signalen</div><p>Bleek, klam, hoofdpijn, misselijk, duizelig, zwak, snelle pols.</p>
+          <div class="h">Doen</div><p>Stop het werk. Naar een koele plek, laten liggen met de benen omhoog, koelen en laten drinken. Geen verbetering binnen 30 minuten? Huisarts of 112.</p>
+        </div>
+      </div>
+      <div class="aid">
+        <div class="top" style="background:var(--red);color:#fff">Hitteberoerte — levensbedreigend</div>
+        <div class="body">
+          <div class="h">Signalen</div><p>Verward, rode/droge of juist klamme huid, bewustzijnsdaling, stuipen.</p>
+          <div class="h">Doen</div><p><b>Direct 112 en de BHV.</b> Koel agressief: nat maken, koelpacks in nek, oksels en liezen, en lucht toewuiven. Niet laten drinken bij verminderd bewustzijn.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- DRINKEN -->
+    <section class="view" id="view-drinken">
+      <p class="lead">Drink elke 15–20 minuten een paar slokken koel water — wacht niet tot je dorst hebt. Bij langdurig zweten ook iets zouts erbij.</p>
+      <div class="label">Check je urinekleur</div>
+      <div class="urine" id="urine"></div>
+      <p class="muted" style="margin-top:12px">Hoe donkerder, hoe meer je moet drinken. Koffie, cola en energiedrank drijven vocht juist af — water is het beste.</p>
+    </section>
+  </main>
+
+  <nav><div class="tabbar">
+    <button class="tab on" data-view="status"><svg viewBox="0 0 24 24"><path d="M14 14.76V5a2 2 0 0 0-4 0v9.76a4 4 0 1 0 4 0z"/></svg>Status</button>
+    <button class="tab" data-view="vooruit"><svg viewBox="0 0 24 24"><path d="M3 20h18M6 20v-7M11 20V8M16 20v-4M21 20V5"/></svg>Vooruit</button>
+    <button class="tab" data-view="timer"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>Timer</button>
+    <button class="tab" data-view="ehbo"><svg viewBox="0 0 24 24"><path d="M12 8v8M8 12h8"/><rect x="3" y="3" width="18" height="18" rx="3"/></svg>EHBO</button>
+    <button class="tab" data-view="drinken"><svg viewBox="0 0 24 24"><path d="M12 2.7S6 9 6 14a6 6 0 0 0 12 0c0-5-6-11.3-6-11.3z"/></svg>Drinken</button>
+  </div></nav>
+</div>
+
+<div class="modal" id="infoModal">
+  <div class="sheet">
+    <button class="close" id="closeInfo" aria-label="Sluiten">✕</button>
+    <h2>Hoe werkt dit?</h2>
+    <p>De app bepaalt de geldende hittefase op basis van de actuele werkelijke en gevoelstemperatuur, met de maatregelen en het werk-rustritme uit het hitteprotocol. Onder "Vooruit" zie je het uurverloop voor de rest van vandaag en een vooruitblik op morgen. Kies de locatie door een plaats te typen, "Mijn locatie" te gebruiken of de temperatuur handmatig in te voeren.</p>
+    <h3>De fasen</h3>
+    <div class="legend"><span class="dot" style="background:var(--ok)"></span>Geen verhoogd risico</div>
+    <div class="legend"><span class="dot" style="background:var(--green)"></span>Groen — alert: extra drinken, zonbescherming</div>
+    <div class="legend"><span class="dot" style="background:var(--yellow)"></span>Geel — verhoogd: tropenrooster, zwaar werk ’s ochtends</div>
+    <div class="legend"><span class="dot" style="background:var(--orange)"></span>Oranje — hoog: zwaar werk stil in de middag</div>
+    <div class="legend"><span class="dot" style="background:var(--red)"></span>Rood — extreem: zwaar buitenwerk stilleggen</div>
+    <h3>Weerbron</h3>
+    <p>De actuele temperatuur en gevoelstemperatuur komen van het dichtstbijzijnde KNMI-meetstation via Buienradar; het uurverloop en de dagverwachting komen van Open-Meteo. De fase wordt uit voorzorg op de gevoelstemperatuur bepaald. Je locatie wordt alleen gebruikt om het juiste station te kiezen en wordt niet gedeeld.</p>
+    <h3>Belangrijk</h3>
+    <p>Dit is een hulpmiddel bij het Hittebeleid & tropenrooster (BELEID-HSE-2026-HITTE-01). De uitvoerder of voorman bepaalt formeel de fase. De drempels zijn indicatieve actiedrempels, geen wettelijke grenswaarden. Bij twijfel: schaal op naar de zwaardere fase. Een noodgeval bel je via 112.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+
+  var PHASES = [
+    { tag:"Onder de drempel", name:"Geen verhoogd risico", dark:false, color:"var(--ok)", accent:"#5b6776",
+      msg:"Werk normaal door. Drink op tijd en let op de zon.",
+      work:"Normaal tempo", drink:"Drink elke 20–30 min",
+      measures:["Drink regelmatig water","Gebruik zonnebrand en bedek je hoofd","Zoek schaduw tijdens de pauze"] },
+    { tag:"Fase Groen", name:"Alert", dark:false, color:"var(--green)", accent:"#2f9e44",
+      msg:"Wees alert. Drink extra en bescherm je tegen de zon.",
+      work:"Normaal, met extra drinkmomenten", drink:"Drink elke 20 min",
+      measures:["Neem hitte mee in de LMRA","Extra drinkmomenten; water op de werkplek","Bedekkende kleding, pet of nekflap, zonnebrand","Pauzeer in de schaduw"] },
+    { tag:"Fase Geel", name:"Verhoogd", dark:true, color:"var(--yellow)", accent:"#f0c000",
+      msg:"Tropenrooster aan. Zwaar werk naar de ochtend, extra pauzes.",
+      work:"45 min werk / 15 min rust", drink:"Drink elke 20 min",
+      measures:["Plan zwaar werk in de ochtend","Extra pauzes in de schaduw of koelte","Let op symptomen; ontzie kwetsbare collega’s","Regel schaduw of koeling op de werkplek"] },
+    { tag:"Fase Oranje", name:"Hoog", dark:true, color:"var(--orange)", accent:"#ef7d1a",
+      msg:"Tropenrooster verplicht. Zwaar werk stil in het heetst van de dag.",
+      work:"30 min werk / 30 min rust", drink:"Drink elke 15 min",
+      measures:["Geen zwaar werk tussen ±12:00 en 16:00","Alleen lichte of onmisbare taken in de middag","Buddy-systeem: let op elkaar","Koelvesten/koeling; mijd cabines zonder airco"] },
+    { tag:"Fase Rood", name:"Extreem", dark:false, color:"var(--red)", accent:"#e23b32",
+      msg:"Zwaar buitenwerk stilleggen. Alleen onmisbaar werk, per locatie beoordeeld.",
+      work:"Zwaar werk gestaakt", drink:"Drink elke 10–15 min",
+      measures:["Leg zwaar fysiek buitenwerk stil","Alleen onmisbaar werk dat veilig kan, in korte blokken","Beoordeel per locatie met uitvoerder én HSE","Verschuif werk naar koelere dagen of uren"] }
+  ];
+
+  var ADVICE_TMR = [
+    "Rustige dag verwacht. Normale aandacht voor drinken en zon.",
+    "Wees alert: extra drinken en zonbescherming.",
+    "Tropenrooster waarschijnlijk nodig. Plan zwaar werk in de ochtend.",
+    "Warme dag. Vermijd zwaar werk in de middag; start vroeg.",
+    "Extreme hitte verwacht. Verschuif zwaar werk of begin heel vroeg."
+  ];
+
+  function phaseFromTemp(t){
+    if(t < 25) return 0;
+    if(t < 28) return 1;
+    if(t < 32) return 2;
+    if(t <= 35) return 3;
+    return 4;
+  }
+  function phaseFromHK(hk){
+    if(hk <= 4) return 0;
+    if(hk <= 6) return 1;
+    if(hk === 7) return 2;
+    if(hk === 8) return 3;
+    return 4;
+  }
+
+  // Zwaar werk verhoogt de hittebelasting: dezelfde temperatuur telt zwaarder (drempels schuiven omlaag).
+  var HEAVY_OFFSET = 3;
+  function applyHeavy(t){ return state.heavy ? t + HEAVY_OFFSET : t; }
+  function heavyHK(idx){ return state.heavy ? Math.min(4, idx + 1) : idx; }
+
+  var state = { t:30, hk:7, useHK:false, heavy:false, live:null, manual:false, place:null, fc:null };
+  function clamp(v,lo,hi){ return Math.max(lo, Math.min(hi, v)); }
+
+  function rememberPlace(p){ try{ if(p) localStorage.setItem("hh_place",JSON.stringify(p)); else localStorage.removeItem("hh_place"); }catch(e){} }
+  function recallPlace(){ try{ var s=localStorage.getItem("hh_place"); return s?JSON.parse(s):null; }catch(e){ return null; } }
+
+  function renderStatus(){
+    var idx, src;
+    var hw = state.heavy ? " · zwaar werk meegerekend" : "";
+    if(state.live && !state.manual){
+      var drive = state.live.feel;
+      idx = phaseFromTemp(applyHeavy(drive));
+      src = "Op basis van de gevoelstemperatuur (" + Math.round(state.live.feel) + " °C)" + hw + ". Bron: " + state.live.source + ".";
+    } else if(state.manual){
+      var idxT = phaseFromTemp(applyHeavy(state.t));
+      var idxH = state.useHK ? heavyHK(phaseFromHK(state.hk)) : -1;
+      idx = Math.max(idxT, idxH);
+      if(state.useHK && idxH > idxT) src = "Handmatig — bepaald door de hittekracht (" + state.hk + ")" + hw + ".";
+      else src = "Handmatig — bepaald door de temperatuur (" + state.t + " °C)" + hw + ".";
+    } else {
+      idx = phaseFromTemp(applyHeavy(state.t));
+      src = "Voorlopige inschatting terwijl het weer wordt opgehaald…";
+    }
+    var p = PHASES[idx];
+    var banner = $("phaseBanner");
+    banner.style.background = p.color;
+    banner.className = "phase" + (p.dark ? " dark" : "");
+    $("pTag").textContent = p.tag;
+    $("pName").textContent = p.name.toUpperCase();
+    $("pMsg").textContent = p.msg;
+    $("pWork").textContent = "⏱ " + p.work;
+    $("pDrink").textContent = "💧 " + p.drink;
+    $("pSrc").textContent = src;
+    var ul = $("measures"); ul.innerHTML = "";
+    p.measures.forEach(function(m){
+      var li = document.createElement("li");
+      li.style.setProperty("--accent", p.accent);
+      li.textContent = m;
+      ul.appendChild(li);
+    });
+    window._phaseIdx = idx;
+  }
+
+  // ---- weer ----
+  function setWxStatus(txt, busy){
+    var el = $("wxStatus"); el.innerHTML = "";
+    if(busy){ var sp=document.createElement("span"); sp.className="pulse"; el.appendChild(sp); }
+    el.appendChild(document.createTextNode(txt));
+  }
+  function haversine(la1,lo1,la2,lo2){
+    var R=6371, rad=Math.PI/180;
+    var dLa=(la2-la1)*rad, dLo=(lo2-lo1)*rad;
+    var a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(la1*rad)*Math.cos(la2*rad)*Math.sin(dLo/2)*Math.sin(dLo/2);
+    return 2*R*Math.asin(Math.sqrt(a));
+  }
+  function pick(o,a,b){ return o[a]!=null ? o[a] : o[b]; }
+
+  function applyWx(temp, feel, label, source){
+    state.live = { temp:temp, feel:feel, label:label, source:source, time:new Date() };
+    state.manual = false;
+    $("manualCard").style.display = "none";
+    $("toManual").textContent = "Handmatig";
+    $("wxMain").style.display = "flex";
+    $("wxTemp").textContent = Math.round(temp);
+    $("wxFeel").textContent = Math.round(feel);
+    var t = state.live.time;
+    var hh = ("0"+t.getHours()).slice(-2), mm = ("0"+t.getMinutes()).slice(-2);
+    $("wxMeta").textContent = label + " · " + hh + ":" + mm + " · " + source;
+    setWxStatus("Actueel weer", false);
+    renderStatus();
+  }
+
+  function loadFor(lat, lon, placeLabel){
+    setWxStatus("Weer ophalen…", true);
+    $("todaySum").textContent = "Verloop laden…";
+    var u = "https://api.open-meteo.com/v1/forecast?latitude="+lat.toFixed(3)+"&longitude="+lon.toFixed(3)
+      + "&current=temperature_2m,apparent_temperature"
+      + "&hourly=temperature_2m,apparent_temperature"
+      + "&daily=apparent_temperature_max,temperature_2m_max,temperature_2m_min,weather_code"
+      + "&forecast_days=2&timezone=auto";
+    fetch(u, { cache:"no-store" }).then(function(r){ return r.json(); }).then(function(j){
+      state.fc = j;
+      var c = j.current || {};
+      if(c.temperature_2m != null){
+        applyWx(c.temperature_2m, (c.apparent_temperature != null ? c.apparent_temperature : c.temperature_2m), placeLabel || "Huidige locatie", "Open-Meteo");
+      } else {
+        state.live = null; $("wxMain").style.display = "none";
+        setWxStatus("Weer ophalen lukt hier niet — typ een plaats of vul handmatig in.", false);
+      }
+      renderForecast(j);
+    }).catch(function(){
+      state.live = null; $("wxMain").style.display = "none";
+      setWxStatus("Weer ophalen lukt hier niet — typ een plaats of vul handmatig in.", false);
+      $("todaySum").textContent = "Verwachting kon hier niet worden opgehaald (werkt op een gehoste versie).";
+      $("todayStrip").innerHTML = ""; $("tmrStrip").innerHTML = "";
+    });
+  }
+
+  function getPosition(){
+    return new Promise(function(res,rej){
+      if(!navigator.geolocation){ rej(new Error("geen geolocatie")); return; }
+      navigator.geolocation.getCurrentPosition(
+        function(p){ res({ lat:p.coords.latitude, lon:p.coords.longitude }); },
+        function(e){ rej(e); },
+        { timeout:8000, maximumAge:300000 }
+      );
+    });
+  }
+  var DEFAULT_LOC = { lat:51.57, lon:4.77 };
+
+  function useGeo(){
+    rememberPlace(null); state.place=null;
+    setWxStatus("Locatie bepalen…", true);
+    getPosition().then(function(loc){
+      loadFor(loc.lat, loc.lon, null);
+    }, function(){
+      setWxStatus("Geen locatietoegang — standaardlocatie. Typ desnoods een plaats.", true);
+      loadFor(DEFAULT_LOC.lat, DEFAULT_LOC.lon, "West-Brabant (standaard)");
+    });
+  }
+
+  // ---- vooruitblik (uur + morgen) ----
+  function buildHours(times, temps, feels, dateStr, fromHour, toHour){
+    var out=[];
+    for(var i=0;i<times.length;i++){
+      var ts=times[i];
+      if(ts.slice(0,10)!==dateStr) continue;
+      var hr=parseInt(ts.slice(11,13),10);
+      if(hr<fromHour||hr>toHour) continue;
+      out.push({ hour:hr, temp:temps[i], feel:(feels && feels[i]!=null ? feels[i] : temps[i]) });
+    }
+    return out;
+  }
+  function renderStrip(boxId, hours, nowHour){
+    var box=$(boxId); box.innerHTML="";
+    if(!hours.length){ box.innerHTML='<div class="muted">Geen uurgegevens beschikbaar.</div>'; return; }
+    var feels=hours.map(function(h){return h.feel;});
+    var lo=Math.min.apply(null,feels.concat([18])), hi=Math.max.apply(null,feels.concat([30]));
+    hours.forEach(function(h){
+      var idx=phaseFromTemp(applyHeavy(h.feel)), p=PHASES[idx];
+      var pct = hi>lo ? (h.feel-lo)/(hi-lo) : 0.5;
+      var barH = 18 + Math.round(pct*82);
+      var col=document.createElement("div"); col.className="fc-col"+(nowHour===h.hour?" now":"");
+      var tt=document.createElement("div"); tt.className="fc-temp"; tt.textContent=Math.round(h.feel)+"°";
+      var bw=document.createElement("div"); bw.className="fc-barwrap";
+      var bar=document.createElement("div"); bar.className="fc-bar"; bar.style.height=barH+"px"; bar.style.background=p.color;
+      bw.appendChild(bar);
+      var hr=document.createElement("div"); hr.className="fc-hr"; hr.textContent=(nowHour===h.hour?"nu":("0"+h.hour).slice(-2));
+      col.appendChild(tt); col.appendChild(bw); col.appendChild(hr);
+      box.appendChild(col);
+    });
+  }
+  function fmtDay(dateStr){
+    var pa=dateStr.split("-");
+    var d=new Date(parseInt(pa[0],10), parseInt(pa[1],10)-1, parseInt(pa[2],10));
+    return d.toLocaleDateString("nl-NL",{ weekday:"short", day:"numeric", month:"short" });
+  }
+  function renderForecast(j){
+    var H=j.hourly||{}, D=j.daily||{};
+    if(!H.time || !D.time){ $("todaySum").textContent="Verwachting niet beschikbaar."; return; }
+    var today=D.time[0], tmr=D.time[1];
+    var nowHour=new Date().getHours();
+
+    // rest van vandaag
+    var th=buildHours(H.time,H.temperature_2m,H.apparent_temperature,today,Math.min(nowHour,21),22);
+    if(state.live){ th.forEach(function(h){ if(h.hour===nowHour){ h.temp=state.live.temp; h.feel=state.live.feel; } }); }
+    renderStrip("todayStrip", th, nowHour);
+    if(th.length){
+      var peak=th[0]; th.forEach(function(h){ if(h.feel>peak.feel) peak=h; });
+      var firstHot=null; th.forEach(function(h){ if(firstHot===null && phaseFromTemp(applyHeavy(h.feel))>=3) firstHot=h; });
+      var s="Piek "+Math.round(peak.feel)+"° rond "+("0"+peak.hour).slice(-2)+":00 ("+PHASES[phaseFromTemp(applyHeavy(peak.feel))].name+").";
+      if(firstHot) s+=" Vanaf "+("0"+firstHot.hour).slice(-2)+":00 "+PHASES[phaseFromTemp(applyHeavy(firstHot.feel))].name.toLowerCase()+" — plan zwaar werk eerder.";
+      if(state.heavy) s+=" Zwaar werk meegerekend.";
+      $("todaySum").textContent=s;
+    } else {
+      $("todaySum").textContent="De werkdag zit er bijna op — bekijk de vooruitblik voor morgen.";
+    }
+
+    // morgen
+    if(tmr){
+      var amax = (D.apparent_temperature_max && D.apparent_temperature_max[1]!=null) ? D.apparent_temperature_max[1] : (D.temperature_2m_max?D.temperature_2m_max[1]:null);
+      var tmax = D.temperature_2m_max ? D.temperature_2m_max[1] : null;
+      var tmin = D.temperature_2m_min ? D.temperature_2m_min[1] : null;
+      var idx = phaseFromTemp(applyHeavy(amax!=null?amax:0));
+      var p = PHASES[idx];
+      var b=$("tmrBanner"); b.style.background=p.color; b.className="phase"+(p.dark?" dark":"");
+      $("tmrTag").textContent="Morgen · "+fmtDay(tmr)+(state.heavy?" · zwaar werk":"");
+      $("tmrName").textContent=p.name.toUpperCase();
+      $("tmrMsg").textContent=ADVICE_TMR[idx];
+      $("tmrMax").textContent="max voelt als "+(amax!=null?Math.round(amax):"–")+"°";
+      $("tmrMin").textContent="laag "+(tmin!=null?Math.round(tmin):"–")+"° · hoog "+(tmax!=null?Math.round(tmax):"–")+"°";
+      var mh=buildHours(H.time,H.temperature_2m,H.apparent_temperature,tmr,6,21);
+      renderStrip("tmrStrip", mh, -1);
+    }
+  }
+  // ---- plaatszoeker ----
+  function geocode(name){
+    var u = "https://geocoding-api.open-meteo.com/v1/search?name="+encodeURIComponent(name)+"&count=8&language=nl&format=json";
+    return fetch(u).then(function(r){ return r.json(); }).then(function(j){
+      var res = j.results || [];
+      if(!res.length) throw new Error("leeg");
+      res.sort(function(a,b){ return (a.country_code==="NL"?0:1)-(b.country_code==="NL"?0:1); });
+      return res;
+    });
+  }
+  function renderSuggestions(list){
+    var box = $("placeSug"); box.innerHTML = "";
+    list.slice(0,6).forEach(function(r){
+      var b = document.createElement("button"); b.className="sug";
+      var extra = (r.admin1 ? " · "+r.admin1 : "") + (r.country_code && r.country_code!=="NL" ? " · "+r.country_code : "");
+      b.textContent = r.name + extra;
+      b.addEventListener("click", function(){ choosePlace(r); });
+      box.appendChild(b);
+    });
+    box.style.display = "flex";
+  }
+  function clearSuggestions(){ var box=$("placeSug"); box.innerHTML=""; box.style.display="none"; }
+  function choosePlace(r){
+    clearSuggestions();
+    var label = r.name + (r.admin1 ? " ("+r.admin1+")" : "");
+    state.place = { lat:r.latitude, lon:r.longitude, label:label };
+    rememberPlace(state.place);
+    $("placeInput").value = ""; $("placeInput").blur();
+    loadFor(r.latitude, r.longitude, label);
+  }
+  function searchPlace(name){
+    if(!name || !name.trim()) return;
+    clearSuggestions();
+    setWxStatus("Plaats zoeken…", true);
+    geocode(name.trim()).then(function(list){
+      if(list.length === 1){ choosePlace(list[0]); }
+      else { renderSuggestions(list); setWxStatus("Kies de juiste plaats:", false); }
+    }).catch(function(){
+      setWxStatus("Plaats niet gevonden — probeer een andere spelling.", false);
+    });
+  }
+  $("placeGo").addEventListener("click", function(){ searchPlace($("placeInput").value); });
+  $("placeInput").addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); searchPlace(this.value); } });
+  $("useGeoBtn").addEventListener("click", useGeo);
+
+  function showManual(on){
+    state.manual = on;
+    $("manualCard").style.display = on ? "block" : "none";
+    $("toManual").textContent = (on && state.live) ? "Gebruik weer" : "Handmatig";
+    if(!on && !state.live){
+      if(state.place) loadFor(state.place.lat, state.place.lon, state.place.label);
+      else useGeo();
+    } else renderStatus();
+  }
+  $("toManual").addEventListener("click", function(){ showManual(!state.manual); });
+
+  // ---- steppers ----
+  function bindStep(minusId, plusId, get, set, render){
+    $(minusId).addEventListener("click", function(){ set(get()-1); render(); });
+    $(plusId).addEventListener("click", function(){ set(get()+1); render(); });
+  }
+  bindStep("tMinus","tPlus", function(){return state.t;}, function(v){ state.t=clamp(v,10,50); $("tVal").textContent=state.t; }, renderStatus);
+  bindStep("hMinus","hPlus", function(){return state.hk;}, function(v){ state.hk=clamp(v,0,10); $("hVal").textContent=state.hk; }, renderStatus);
+  $("hkToggle").addEventListener("change", function(e){
+    state.useHK = e.target.checked;
+    var st = $("hkStepper");
+    st.style.opacity = state.useHK ? "1" : ".4";
+    st.style.pointerEvents = state.useHK ? "auto" : "none";
+    renderStatus();
+  });
+
+  // ---- zwaar werk (WBGT-verdieping) ----
+  $("wbgtSwitch").addEventListener("change", function(e){
+    state.heavy = e.target.checked;
+    $("heavyHint").textContent = state.heavy
+      ? "Staat aan — er wordt gerekend met zwaar werk. De fasen tellen zwaarder en slaan eerder om naar geel, oranje en rood. Vuistregel ISO 7243 / SZW; exacte WBGT-meting zie §8.3 van het beleid."
+      : "Staat uit. Zet aan bij zwaar werk: de fasen tellen dan zwaarder en slaan eerder om naar geel, oranje en rood — hier én bij Vooruit. Vuistregel ISO 7243 / SZW; exacte WBGT-meting zie §8.3 van het beleid.";
+    renderStatus();
+    if(state.fc) renderForecast(state.fc);
+  });
+
+  // ---- tabs ----
+  var tabs = document.querySelectorAll(".tab");
+  function showView(name){
+    document.querySelectorAll(".view").forEach(function(v){ v.classList.remove("active"); });
+    $("view-"+name).classList.add("active");
+    tabs.forEach(function(t){ t.classList.toggle("on", t.dataset.view===name); });
+    document.querySelector("main").scrollTop = 0;
+  }
+  tabs.forEach(function(t){ t.addEventListener("click", function(){ showView(t.dataset.view); }); });
+
+  // ---- timer ----
+  var PRESETS = [
+    { label:"45 / 15 (Geel)", work:45, rest:15 },
+    { label:"30 / 30 (Oranje)", work:30, rest:30 },
+    { label:"15 / 45 (Rood)", work:15, rest:45 },
+    { label:"Drinkherinnering 20 min", work:20, rest:0 }
+  ];
+  var tm = { presetIdx:0, phase:"work", remaining:PRESETS[0].work*60, running:false, intv:null, rounds:0 };
+  function fmt(s){ var m=Math.floor(s/60), ss=s%60; return (m<10?"0":"")+m+":"+(ss<10?"0":"")+ss; }
+  function renderPresets(){
+    var box = $("presets"); box.innerHTML = "";
+    PRESETS.forEach(function(p,i){
+      var b = document.createElement("button");
+      b.className = "preset" + (i===tm.presetIdx ? " on":"");
+      b.textContent = p.label;
+      b.addEventListener("click", function(){ selectPreset(i); });
+      box.appendChild(b);
+    });
+  }
+  function selectPreset(i){ tm.presetIdx=i; tm.phase="work"; tm.remaining=PRESETS[i].work*60; stopTimer(); paintTimer(); renderPresets(); }
+  function paintTimer(){
+    var p = PRESETS[tm.presetIdx];
+    $("timerBig").textContent = fmt(tm.remaining);
+    var ring = $("timerRing"); ring.classList.remove("work","rest");
+    if(p.rest===0){ $("timerState").textContent = tm.running?"Werken":"Klaar"; $("timerSub").textContent="Drink water bij elke melding"; ring.classList.add("work"); }
+    else if(tm.phase==="work"){ $("timerState").textContent = tm.running?"Werken":"Klaar"; $("timerSub").textContent="Werkblok — "+p.work+" min"; ring.classList.add("work"); }
+    else { $("timerState").textContent="Pauze — drink water"; $("timerSub").textContent="Rust — "+p.rest+" min"; ring.classList.add("rest"); }
+    $("roundCount").textContent = tm.rounds;
+  }
+  var audioCtx=null;
+  function beep(n){
+    try{
+      audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+      var t = audioCtx.currentTime;
+      for(var i=0;i<(n||2);i++){
+        var o=audioCtx.createOscillator(), g=audioCtx.createGain();
+        o.type="square"; o.frequency.value=880; o.connect(g); g.connect(audioCtx.destination);
+        var s=t+i*0.28;
+        g.gain.setValueAtTime(0.0001,s);
+        g.gain.exponentialRampToValueAtTime(0.25,s+0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001,s+0.22);
+        o.start(s); o.stop(s+0.24);
+      }
+    }catch(e){}
+  }
+  function alertSwitch(){
+    beep(tm.phase==="rest"?3:2);
+    if(navigator.vibrate) navigator.vibrate(tm.phase==="rest"?[250,120,250]:[200]);
+    var ring=$("timerRing"); ring.classList.add("flash");
+    setTimeout(function(){ ring.classList.remove("flash"); },650);
+  }
+  function tick(){
+    tm.remaining--;
+    if(tm.remaining<=0){
+      var p=PRESETS[tm.presetIdx];
+      if(p.rest===0){ tm.rounds++; tm.remaining=p.work*60; alertSwitch(); }
+      else if(tm.phase==="work"){ tm.phase="rest"; tm.remaining=p.rest*60; alertSwitch(); }
+      else { tm.phase="work"; tm.remaining=p.work*60; tm.rounds++; alertSwitch(); }
+    }
+    paintTimer();
+  }
+  function startTimer(){ if(tm.running){ stopTimer(); return; } tm.running=true; $("startBtn").textContent="Pauzeer"; beep(1); tm.intv=setInterval(tick,1000); paintTimer(); }
+  function stopTimer(){ tm.running=false; $("startBtn").textContent="Start"; if(tm.intv){ clearInterval(tm.intv); tm.intv=null; } }
+  function resetTimer(){ stopTimer(); tm.phase="work"; tm.remaining=PRESETS[tm.presetIdx].work*60; tm.rounds=0; paintTimer(); }
+  $("startBtn").addEventListener("click", startTimer);
+  $("resetBtn").addEventListener("click", resetTimer);
+  $("startTimerBtn").addEventListener("click", function(){
+    var idx = window._phaseIdx || 0;
+    var map = {2:0, 3:1, 4:2};
+    selectPreset(idx in map ? map[idx] : 3);
+    showView("timer");
+  });
+
+  // ---- urine ----
+  var URINE = [
+    ["#faf7c9","Goed gehydrateerd — zo houden."],
+    ["#f3ec9a","Prima — blijf drinken."],
+    ["#e9dc6b","Strogeel — drink wat vaker."],
+    ["#d9c247","Donkergeel — je raakt uitgedroogd, drink meer."],
+    ["#c2a030","Amber — uitgedroogd, drink nu en blijf drinken."],
+    ["#9c7320","Donker amber — ernstig uitgedroogd, direct drinken."],
+    ["#78510f","Bruinig — stop, drink en meld het bij je voorman."]
+  ];
+  (function(){
+    var box=$("urine");
+    URINE.forEach(function(u){
+      var row=document.createElement("div"); row.className="urow";
+      var sw=document.createElement("div"); sw.className="uswatch"; sw.style.background=u[0];
+      var tx=document.createElement("div"); tx.className="utext"; tx.textContent=u[1];
+      row.appendChild(sw); row.appendChild(tx); box.appendChild(row);
+    });
+  })();
+
+  // ---- modal ----
+  $("infoBtn").addEventListener("click", function(){ $("infoModal").classList.add("open"); });
+  $("closeInfo").addEventListener("click", function(){ $("infoModal").classList.remove("open"); });
+  $("infoModal").addEventListener("click", function(e){ if(e.target===this) this.classList.remove("open"); });
+
+  // ---- init ----
+  renderStatus();
+  renderPresets();
+  paintTimer();
+  var saved = recallPlace();
+  if(saved && saved.lat!=null){ state.place=saved; loadFor(saved.lat, saved.lon, saved.label); }
+  else { useGeo(); }
+})();
+</script>
+</body>
+</html>
