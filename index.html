@@ -4,16 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#16181d">
+<meta name="theme-color" content="#00416e">
 <title>Hitte-check · Hanab</title>
 <style>
   :root{
-    --bg:#16181d; --surface:#20242b; --surface-2:#2a2f38; --line:#363c46;
-    --text:#f3f5f7; --dim:#a7afba;
-    --ok:#5b6776; --green:#2f9e44; --yellow:#f0c000; --orange:#ef7d1a; --red:#e23b32;
-    --hivis:#f5e000;
+    --bg:#e8f1f8; --surface:#ffffff; --surface-2:#eef5fb; --line:#d3e2ef;
+    --text:#0e2840; --dim:#5b7488;
+    --ok:#647d90; --green:#13a538; --yellow:#f4bc00; --orange:#ec7a1a; --red:#e63223;
+    --hivis:#00416e; --brand-dark:#00214b; --accent-red:#e63223;
     --radius:16px; --tap:60px;
-    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-family:Arial,"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,sans-serif;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0;background:var(--bg);color:var(--text)}
@@ -23,10 +23,10 @@
   header{padding:14px 18px 0;flex:0 0 auto}
   .brandrow{display:flex;align-items:center;justify-content:space-between;gap:10px}
   .brand{display:flex;flex-direction:column;line-height:1.05}
-  .brand b{font-size:1.18rem;font-weight:800;letter-spacing:.01em}
+  .brand b{font-size:1.18rem;font-weight:800;letter-spacing:.01em;color:var(--hivis)}
   .brand span{font-size:.72rem;color:var(--dim);text-transform:uppercase;letter-spacing:.12em;margin-top:3px}
   .infobtn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--text);font-weight:800;font-size:1rem;cursor:pointer}
-  .hazard{height:8px;margin:12px 0 0;border-radius:4px;background:repeating-linear-gradient(135deg,var(--hivis) 0 14px,#15171c 14px 28px)}
+  .hazard{height:6px;margin:12px 0 0;border-radius:4px;background:linear-gradient(90deg,var(--accent-red) 0 20%,var(--hivis) 20% 100%)}
 
   main{flex:1 1 auto;overflow-y:auto;padding:16px 16px 96px;-webkit-overflow-scrolling:touch}
   .view{display:none;animation:fade .25s ease}
@@ -82,7 +82,7 @@
   ul.measures{list-style:none;margin:6px 0 0;padding:0}
   ul.measures li{position:relative;padding:8px 0 8px 26px;border-top:1px solid var(--line);font-size:.96rem;line-height:1.4}
   ul.measures li:first-child{border-top:none}
-  ul.measures li::before{content:"";position:absolute;left:4px;top:15px;width:9px;height:9px;border-radius:2px;background:var(--accent,#5b6776)}
+  ul.measures li::before{content:"";position:absolute;left:4px;top:15px;width:9px;height:9px;border-radius:2px;background:var(--accent,#647d90)}
 
   /* forecast strip */
   .fc-sum{font-size:.92rem;color:var(--text);line-height:1.4;margin:8px 0 6px}
@@ -98,21 +98,21 @@
   .fc-legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
 
   .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:var(--tap);border-radius:14px;border:none;font-size:1rem;font-weight:800;cursor:pointer;margin-top:10px;padding:0 14px}
-  .btn-primary{background:var(--hivis);color:#16181d}
+  .btn-primary{background:var(--hivis);color:#fff}
   .btn-ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--line)}
   .btn:active{filter:brightness(.94)}
 
   .seg{display:flex;gap:8px;margin-top:12px}
   .seg button{flex:1;min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--dim);font-weight:700;cursor:pointer}
-  .seg button.on{background:var(--text);color:#16181d;border-color:var(--text)}
+  .seg button.on{background:var(--hivis);color:#fff;border-color:var(--hivis)}
   .wbgt-out{margin-top:14px;border-radius:12px;padding:14px;font-weight:700;text-align:center}
 
   .timer-wrap{text-align:center}
   .timer-state{font-size:.8rem;letter-spacing:.18em;text-transform:uppercase;font-weight:800;color:var(--dim)}
   .timer-big{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:clamp(4rem,26vw,6.5rem);font-weight:700;line-height:1;letter-spacing:-.03em;margin:4px 0 2px}
   .ring{border-radius:24px;padding:26px 18px;margin:6px 0 14px;border:1px solid var(--line);background:var(--surface);transition:background .3s}
-  .ring.work{background:#1c2a20;border-color:#2f5a37}
-  .ring.rest{background:#2e2410;border-color:#7a5f15}
+  .ring.work{background:#e3f3e8;border-color:#a8d8b5}
+  .ring.rest{background:#fdf3d6;border-color:#eccf73}
   .ring.flash{animation:flash .6s ease}
   @keyframes flash{0%,100%{filter:none}30%{filter:brightness(1.8)}}
   .presets{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:4px}
@@ -141,7 +141,7 @@
   .muted{color:var(--dim);font-size:.86rem;line-height:1.45}
 
   nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;pointer-events:none}
-  .tabbar{width:100%;max-width:480px;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(20,22,27,.94);backdrop-filter:blur(10px);border-top:1px solid var(--line);pointer-events:auto;padding-bottom:env(safe-area-inset-bottom)}
+  .tabbar{width:100%;max-width:480px;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(255,255,255,.97);backdrop-filter:blur(10px);border-top:1px solid var(--line);pointer-events:auto;padding-bottom:env(safe-area-inset-bottom)}
   .tab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 2px 12px;background:none;border:none;color:var(--dim);cursor:pointer;font-size:.66rem;font-weight:700;letter-spacing:.01em}
   .tab svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .tab.on{color:var(--text)}
@@ -357,23 +357,23 @@
   var $ = function(id){ return document.getElementById(id); };
 
   var PHASES = [
-    { tag:"Onder de drempel", name:"Geen verhoogd risico", dark:false, color:"var(--ok)", accent:"#5b6776",
+    { tag:"Onder de drempel", name:"Geen verhoogd risico", dark:false, color:"var(--ok)", accent:"#647d90",
       msg:"Werk normaal door. Drink op tijd en let op de zon.",
       work:"Normaal tempo", drink:"Drink elke 20–30 min",
       measures:["Drink regelmatig water","Gebruik zonnebrand en bedek je hoofd","Zoek schaduw tijdens de pauze"] },
-    { tag:"Fase Groen", name:"Alert", dark:false, color:"var(--green)", accent:"#2f9e44",
+    { tag:"Fase Groen", name:"Alert", dark:false, color:"var(--green)", accent:"#13a538",
       msg:"Wees alert. Drink extra en bescherm je tegen de zon.",
       work:"Normaal, met extra drinkmomenten", drink:"Drink elke 20 min",
       measures:["Neem hitte mee in de LMRA","Extra drinkmomenten; water op de werkplek","Bedekkende kleding, pet of nekflap, zonnebrand","Pauzeer in de schaduw"] },
-    { tag:"Fase Geel", name:"Verhoogd", dark:true, color:"var(--yellow)", accent:"#f0c000",
+    { tag:"Fase Geel", name:"Verhoogd", dark:true, color:"var(--yellow)", accent:"#f4bc00",
       msg:"Tropenrooster aan. Zwaar werk naar de ochtend, extra pauzes.",
       work:"45 min werk / 15 min rust", drink:"Drink elke 20 min",
       measures:["Plan zwaar werk in de ochtend","Extra pauzes in de schaduw of koelte","Let op symptomen; ontzie kwetsbare collega’s","Regel schaduw of koeling op de werkplek"] },
-    { tag:"Fase Oranje", name:"Hoog", dark:true, color:"var(--orange)", accent:"#ef7d1a",
+    { tag:"Fase Oranje", name:"Hoog", dark:true, color:"var(--orange)", accent:"#ec7a1a",
       msg:"Tropenrooster verplicht. Zwaar werk stil in het heetst van de dag.",
       work:"30 min werk / 30 min rust", drink:"Drink elke 15 min",
       measures:["Geen zwaar werk tussen ±12:00 en 16:00","Alleen lichte of onmisbare taken in de middag","Buddy-systeem: let op elkaar","Koelvesten/koeling; mijd cabines zonder airco"] },
-    { tag:"Fase Rood", name:"Extreem", dark:false, color:"var(--red)", accent:"#e23b32",
+    { tag:"Fase Rood", name:"Extreem", dark:false, color:"var(--red)", accent:"#e63223",
       msg:"Zwaar buitenwerk stilleggen. Alleen onmisbaar werk, per locatie beoordeeld.",
       work:"Zwaar werk gestaakt", drink:"Drink elke 10–15 min",
       measures:["Leg zwaar fysiek buitenwerk stil","Alleen onmisbaar werk dat veilig kan, in korte blokken","Beoordeel per locatie met uitvoerder én HSE","Verschuif werk naar koelere dagen of uren"] }
