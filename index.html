@@ -165,7 +165,7 @@
 <div class="app">
   <header>
     <div class="brandrow">
-      <div class="brand"><b>Hitte-check</b><span>Hanab Pipelines &amp; Utilities</span></div>
+      <div class="brand"><b>Hitte-check</b><span>Hanab</span></div>
       <button class="infobtn" id="infoBtn" aria-label="Uitleg en disclaimer">i</button>
     </div>
     <div class="hazard" aria-hidden="true"></div>
@@ -177,9 +177,9 @@
       <div class="card" id="heavyCard">
         <div class="toggle-row">
           <div><div class="label">Zwaar werk</div><div class="muted" style="margin-top:2px">putten, sleuven, sjouwen, hete leidingen, zware PBM</div></div>
-          <label class="switch"><input type="checkbox" id="wbgtSwitch"><span class="slider"></span></label>
+          <label class="switch"><input type="checkbox" id="wbgtSwitch" checked><span class="slider"></span></label>
         </div>
-        <div class="muted" id="heavyHint" style="margin-top:8px">Staat uit. Zet aan bij zwaar werk: de fasen tellen dan zwaarder en slaan eerder om naar geel, oranje en rood — hier én bij Vooruit. Vuistregel ISO 7243 / SZW; exacte WBGT-meting zie §8.3 van het beleid.</div>
+        <div class="muted" id="heavyHint" style="margin-top:8px">Staat aan — er wordt gerekend met zwaar werk. De fasen tellen zwaarder en slaan eerder om naar geel, oranje en rood.</div>
       </div>
 
       <div class="card" id="wxCard">
@@ -407,7 +407,7 @@
   function applyHeavy(t){ return state.heavy ? t + HEAVY_OFFSET : t; }
   function heavyHK(idx){ return state.heavy ? Math.min(4, idx + 1) : idx; }
 
-  var state = { t:30, hk:7, useHK:false, heavy:false, live:null, manual:false, place:null, fc:null };
+  var state = { t:30, hk:7, useHK:false, heavy:true, live:null, manual:false, place:null, fc:null };
   function clamp(v,lo,hi){ return Math.max(lo, Math.min(hi, v)); }
 
   function rememberPlace(p){ try{ if(p) localStorage.setItem("hh_place",JSON.stringify(p)); else localStorage.removeItem("hh_place"); }catch(e){} }
@@ -677,8 +677,8 @@
   $("wbgtSwitch").addEventListener("change", function(e){
     state.heavy = e.target.checked;
     $("heavyHint").textContent = state.heavy
-      ? "Staat aan — er wordt gerekend met zwaar werk. De fasen tellen zwaarder en slaan eerder om naar geel, oranje en rood. Vuistregel ISO 7243 / SZW; exacte WBGT-meting zie §8.3 van het beleid."
-      : "Staat uit. Zet aan bij zwaar werk: de fasen tellen dan zwaarder en slaan eerder om naar geel, oranje en rood — hier én bij Vooruit. Vuistregel ISO 7243 / SZW; exacte WBGT-meting zie §8.3 van het beleid.";
+      ? "Staat aan — er wordt gerekend met zwaar werk. De fasen tellen zwaarder en slaan eerder om naar geel, oranje en rood."
+      : "Staat uit. Zet aan bij zwaar werk: de fasen tellen dan zwaarder en slaan eerder om naar geel, oranje en rood — hier én bij Vooruit.";
     renderStatus();
     if(state.fc) renderForecast(state.fc);
   });
